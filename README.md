@@ -392,6 +392,8 @@ Don't ever start new sessions. Use expensive models to do trivial things. Have a
 
 ## Local LLMs
 
+There is a difference, but not a billion dollars difference.
+
 Various ways to host local LLMs
 
 * https://lmstudio.ai/
