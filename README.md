@@ -290,27 +290,43 @@ A very brief outline of the project. Some studies around context-rot suggest mod
 
 * https://arxiv.org/abs/2602.11988
 
-Enough about context — what's a harness?
+# What's a harness?
 
-Claude Code / Codex / OpenCode / Copilot-cli
+Claude Code / Codex / OpenCode / Copilot-cli / OpenHarness / Pi
 
 * https://opencode.ai/
 * https://pi.dev/
+* https://github.com/HKUDS/OpenHarness
 
 These are wrappers that give the model a better interface for tool calling.
 
 Claude Code is notably gamified — engineered to make you *feel* productive rather than actually use the context efficiently. It maximizes token burn while you feel like you're getting things done. Useful, but know what you're paying for.
+## What are agents (the markdown kind)
 
-What are agents? (Not the markdown kind.)
+Markdown files that define an agent persona for a specific role or task — "You are a senior Rust developer," "You are a database admin," etc. Some harnesses inject these into context on every request.
 
-Hermes Agent, OpenClaw
+A generic agent usually wins over configured markdown agents, but they can be useful for specialized tasks. Just be aware they're mostly context pollution.
 
-* https://github.com/NousResearch/hermes-agent
+[Conditional loading (only inject when relevant) helps, but few harnesses do this well.]
 
-I would not recommend using openclaw as it's basically super exploitable, but some of the smaller nanoclaw / microclaw
-are interesting to run on local hardware.
+## What are agents? (Not the markdown kind.)
+
+An agent is a model running in a loop with tool access, memory, and autonomy. The basic pattern (ReAct: Reasoning + Acting):
+
+1. Model receives a task
+2. Model decides: respond directly or call a tool
+3. If tool: execute, add result to context, loop back to 2
+4. If respond: done
 
 LLM with access to cron (and too many permissions) doing autonomous tasks.
+
+Frameworks:
+
+* **Hermes Agent** — https://github.com/NousResearch/hermes-agent
+  Lightweight agent framework from Nous Research. Uses function calling, supports local models.
+
+* **OpenClaw** — wouldn't recommend, super exploitable
+  The smaller forks (nanoclaw, microclaw) are more interesting for local hardware.
 
 # Some final notes
 
