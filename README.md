@@ -381,3 +381,8 @@ Should the models do the code review? Maybe — but locally you can use it to do
 However I suspect you can judge for yourself whether having a model do something you can already do trivially is a great use of it. Or did you just turn your GitHub commit message into a $48 Anthropic Mythos call for fun because you couldn't be bothered?
 
 Just because you can, doesn't mean you should!
+
+# How to spend as much as possible (for David)
+
+Don't ever start new sessions, use expensive models to do trivial things, have agents running in loops with gigantic context for no reason. Don't provide the context to the agent, make it search for everything.
+
