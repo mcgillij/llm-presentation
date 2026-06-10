@@ -403,3 +403,35 @@ We are now at a point where local LLMs are roughly 3-6 months behind the frontie
 You can host local LLMs and play around with them realistically with as little as 8 GB of VRAM. Or with the new Macs with unified memory, you can host even larger models (but they run slower). However the difference between the state of the art and what you can run locally is stark, but that makes experimentation effectively free.
 
 You can create your own tools, skills, and MCPs and realize the model makes less and less of a difference — the harness and context management start mattering way more. As even the local models are fully capable of most tasks if we break them down sufficiently.
+
+## Density: Dense vs MoE
+
+When looking at available models you'll see naming like `Qwen3-27b` vs `Qwen3-35b-a3b`. That last bit tells you the architecture:
+
+* **Dense models** — every parameter is active for every token. Qwen3-27b means 27 billion params, all used per forward pass. Simple, predictable, but expensive at scale.
+* **MoE (Mixture of Experts)** — only a subset of parameters activate per token. Qwen3-35b-a3b means 35 billion total params, but only 3 billion active per token. You get more total capacity for roughly the same compute cost.
+
+Trade-offs:
+
+* MoE is more efficient per-token (more params for the same FLOPs)
+* But it needs more RAM — all parameters must be loaded even if only some activate
+* MoE can be trickier to quantize because the routing layers are sensitive to precision loss
+* Dense models are simpler to run, profile, and optimize
+
+[If you have the VRAM, dense is easier. If you're pinched, MoE gives you more model for your memory budget.]
+
+## Quantization
+
+Quantization reduces the precision of the model's weights — trading a small amount of quality for much less memory and faster inference.
+
+| Format | Bits | Memory vs FP16 | Quality impact | Use case |
+|---|---|---|---|---|
+| FP16 / BF16 | 16 | 1x | None | Training, reference |
+| INT8 | 8 | ~50% | Minor | Safe default |
+| INT4 | 4 | ~25% | Noticeable on some tasks | Local / edge |
+| GGUF (Q4_K_M etc.) | 4-8 | varies | Tuneable | llama.cpp / local |
+| AWQ / GPTQ | 4 | ~25% | Better than naive INT4 | GPU inference |
+
+Real-world example: A 70B model in FP16 needs ~140 GB VRAM. In INT4 it needs ~35 GB. That's the difference between "needs a cluster" and "fits on a single A100."
+
+[When in doubt, start with INT8 or Q4_K_M. Go higher if you notice quality regressions on your specific task.]
