@@ -1,7 +1,9 @@
-LLMs: Harness, Copilot, Claude Code, Tokens
-https://karpathy.ai/
+# LLMs: Harness, Copilot, Claude Code, Tokens
 
-WTF Is this stuff!
+Some useful reading:
+
+* https://karpathy.ai/
+* https://simonwillison.net/
 
 # How tokenizers work (input and output)
 
@@ -171,11 +173,14 @@ Example Tool definition:
 ```
 
 ## Tool calling in practice
+
 ### Tool
-https://github.com/mcgillij/dorf/blob/main/client/bot/tools/searxng_search.py
+
+* https://github.com/mcgillij/dorf/blob/main/client/bot/tools/searxng_search.py
 
 ### How to process tool call / requests
-https://github.com/mcgillij/dorf/blob/main/client/bot/lms.py#L220
+
+* https://github.com/mcgillij/dorf/blob/main/client/bot/lms.py#L220
 
 
 # Tool calling
@@ -223,10 +228,10 @@ xychart-beta
 
 Papers on context utilization:
 
-https://arxiv.org/abs/2307.03172
-https://arxiv.org/abs/2509.21361
-https://arxiv.org/abs/2508.07479
-https://arxiv.org/abs/2510.05381
+* https://arxiv.org/abs/2307.03172
+* https://arxiv.org/abs/2509.21361
+* https://arxiv.org/abs/2508.07479
+* https://arxiv.org/abs/2510.05381
 
 # Compaction
 
@@ -258,14 +263,14 @@ With something like Claude Code, you can turn skills into slash commands — e.g
 
 A very brief outline of the project. Some studies around context-rot suggest modern harnesses can work better without it — the pollution often outweighs the benefit.
 
-https://arxiv.org/abs/2602.11988
+* https://arxiv.org/abs/2602.11988
 
 Enough about context — what's a harness?
 
 Claude Code / Codex / OpenCode / Copilot-cli
 
-https://opencode.ai/
-https://pi.dev/
+* https://opencode.ai/
+* https://pi.dev/
 
 These are wrappers that give the model a better interface for tool calling.
 
@@ -275,7 +280,7 @@ What are agents? (Not the markdown kind.)
 
 Hermes Agent, OpenClaw
 
-https://github.com/NousResearch/hermes-agent
+* https://github.com/NousResearch/hermes-agent
 
 I would not recommend using openclaw as it's basically super exploitable, but some of the smaller nanoclaw / microclaw
 are interesting to run on local hardware.
@@ -315,9 +320,10 @@ flowchart TD
 
 I mean this is an open question...
 
-Should your model write your commit messages and PR descriptions? Maybe — but you should probably know what it's doing.
+Should your model write your commit messages and PR descriptions? Maybe — but at some point you may actually have to understand what your doing...
 
-Should the models do the code-review, not on github, but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
+Should the models do the code-review, maybe?, but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
 
 However I suspect you can judge for yourself whether having a model do something you can already do trivially is a great use of it. Or did you just turn your GitHub commit message into a $48 Anthropic Mythos call for fun because you couldn't be bothered?
 
+Just because you can, doesn't mean you should!
