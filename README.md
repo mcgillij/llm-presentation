@@ -301,6 +301,7 @@ Claude Code / Codex / OpenCode / Copilot-cli / OpenHarness / Pi
 These are wrappers that give the model a better interface for tool calling.
 
 Claude Code is notably gamified — engineered to make you *feel* productive rather than actually use the context efficiently. It maximizes token burn while you feel like you're getting things done. Useful, but know what you're paying for.
+
 ## What are agents (the markdown kind)
 
 Markdown files that define an agent persona for a specific role or task — "You are a senior Rust developer," "You are a database admin," etc. Some harnesses inject these into context on every request.
@@ -384,5 +385,21 @@ Just because you can, doesn't mean you should!
 
 # How to spend as much as possible (for David)
 
-Don't ever start new sessions, use expensive models to do trivial things, have agents running in loops with gigantic context for no reason. Don't provide the context to the agent, make it search for everything.
+Don't ever start new sessions. Use expensive models to do trivial things. Have agents running in loops with gigantic context for no reason. Don't provide the context to the agent — make it search for everything.
 
+
+# Bonus extra content
+
+## Local LLMs
+
+Various ways to host local LLMs
+
+* https://lmstudio.ai/
+* https://ollama.com/
+* https://vllm.ai/
+
+We are now at a point where local LLMs are roughly 3-6 months behind the frontier SOTA models from GPT-5.5 and Mythos.
+
+You can host local LLMs and play around with them realistically with as little as 8 GB of VRAM. Or with the new Macs with unified memory, you can host even larger models (but they run slower). However the difference between the state of the art and what you can run locally is stark, but that makes experimentation effectively free.
+
+You can create your own tools, skills, and MCPs and realize the model makes less and less of a difference — the harness and context management start mattering way more. As even the local models are fully capable of most tasks if we break them down sufficiently.
