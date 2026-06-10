@@ -57,6 +57,16 @@ https://github.com/mcgillij/llm_exploration/blob/main/AttentionBenchmarks.ipynb
 
 Pick a document from pre-training. Run the model over its tokenized inputs. Compute the loss. Backpropagate to get gradients. Update the parameters. Repeat — billions of times.
 
+```mermaid
+flowchart TD
+    A["Raw Text Corpus"] --> B["Clean & Tokenize"]
+    B --> C["Neural Network"]
+    C --> D["Compute Loss"]
+    D --> E["Backpropagate"]
+    E --> F["Update Parameters"]
+    F --> C
+```
+
 The artifact of this step is a "base" model.
 
 It takes input in the form of continuations:
@@ -124,38 +134,16 @@ For each function call, return a json object with function name and arguments wi
 
 Example Tool call:
 
-``` bash
-┌──────────────────────────┐
-│ SETUP: LLM + Tool list   │
-└──────────┬───────────────┘
-           ▼
-┌──────────────────────────┐
-│    Get user input        │◄────┐
-└──────────┬───────────────┘     │
-           ▼                     │
-┌──────────────────────────┐     │
-│ LLM prompted w/messages  │     │
-└──────────┬───────────────┘     │
-           ▼                     │
-     Needs tools?                │
-      │         │                │
-    Yes         No               │
-      │         │                │
-      ▼         └────────────┐   │
-┌─────────────┐              │   │
-│Tool Response│              │   │
-└──────┬──────┘              │   │
-       ▼                     │   │
-┌─────────────┐              │   │
-│Execute tools│              │   │
-└──────┬──────┘              │   │
-       ▼                     ▼   │
-┌─────────────┐          ┌───────────┐
-│Add results  │          │  Normal   │
-│to messages  │          │ response  │
-└──────┬──────┘          └─────┬─────┘
-       │                       ▲
-       └───────────────────────┘
+```mermaid
+flowchart TD
+    A["SETUP: LLM + Tool list"] --> B["Get user input"]
+    B --> C["LLM prompted with messages"]
+    C --> D{"Needs tools?"}
+    D -->|No| H["Normal response"]
+    D -->|Yes| E["Tool Response"]
+    E --> F["Execute tools"]
+    F --> G["Add results to messages"]
+    G --> B
 ```
 
 Example Tool definition:
@@ -202,20 +190,36 @@ The questions and tasks you're assigning to the model
 
 Injecting relevant context into the prompt before (or after) the model generates its response — via pre-processing or post-processing hooks.
 
-Some people try to sell this as "grounding" the models in truth, but there's no actual way to do this.
+```mermaid
+flowchart LR
+    A["User Query"] --> B["Embed & Search"]
+    B --> C["Retrieve Relevant Docs"]
+    C --> D["Inject into Prompt"]
+    D --> E["LLM Generates Response"]
+```
+
+It surfaces relevant info, but don't mistake retrieval for truth — the model can still ignore or misread what you inject.
 
 
 # Context Windows (input / output)
 
 Context is measured in "tokens" — the unit the model actually works in.
 
-![context window](context_window.png)
+![context window](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/context_window.png)
 
 ## 70% threshold and compaction
 
-Even models with 1M-token context windows most models can't effectively use all of it.
+Even models with 1M-token context windows can't effectively use all of it.
 
 Only the first portion gets real attention. Studies show LLMs find something like 99% of relevant bugs in the first 10% of the context — just like a human reader, attention falls off sharply as context grows.
+
+```mermaid
+xychart-beta
+    title "Attention vs Token Position"
+    x-axis ["0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"]
+    y-axis "Attention Weight" 0 --> 1
+    line [1.0, 0.98, 0.92, 0.85, 0.75, 0.60, 0.40, 0.20, 0.10, 0.05, 0.02]
+```
 
 Papers on context utilization:
 
@@ -226,7 +230,17 @@ https://arxiv.org/abs/2510.05381
 
 # Compaction
 
-Most harnesses will compact at roughly 70% of the context-window due to this known limitation. Compaction is generally just a call to a cheaper model to summarize the history and start a new session with the summary in the context + the system prompt + your tools + your skills + your MCP's etc.
+Most harnesses will compact at roughly 70% of the context-window due to this known limitation. Compaction is generally just a call to a cheaper model to summarize the history and start a new session with the summary, system prompt, tools, skills, MCPs — everything that was in the original context.
+
+```mermaid
+flowchart LR
+    A["Session Running"] --> B{"Context > 70%?"}
+    B -->|No| C["Continue Normally"]
+    B -->|Yes| D["Call Cheaper Model"]
+    D --> E["Summarize History"]
+    E --> F["New Session: Summary + Tools"]
+    F --> A
+```
 
 ## MCP
 
@@ -270,7 +284,7 @@ LLM with access to cron (and too many permissions) doing autonomous tasks.
 
 # Some final notes
 
-LLM's are super neat, super un-predictable. But using them effectively isn't a science yet. However what is 100% true is that managing the context is the current best way to allow the models to solve issues for you effectively.
+LLMs are super neat, super unpredictable. But using them effectively isn't a science yet. However what is 100% true is that managing the context is the current best way to allow the models to solve issues for you effectively.
 
 Not even taking into account the cost. Just in terms of getting things done, managing the context is the quickest way to not have to iterate many times.
 
@@ -279,19 +293,31 @@ Not even taking into account the cost. Just in terms of getting things done, man
 
 Plan with a decent model, ask it about the code that you want to modify, and have it suggest changes, make it write out the concrete implementation details to a markdown file.
 
-Edit the plan to reflect the changes you want, this step is key as the model doesn't know your intent as you likely are bad at describing it, due to being a human.
+Edit the plan to reflect the changes you want. This step is key — the model doesn't know your intent because you're human, and you're probably bad at describing it.
 
-/new session with @my_revised_plan.md and @thepathtothefilesyouarewantingtomodify ask competent model to review the plan for correctness against the current codebase.
+/new session with @my_revised_plan.md and @path/to/files/you/want/to/modify ask a competent model to review the plan for correctness against the current codebase.
 
 Then once the model has the correct context in place, you can swap to build mode with a lesser model for the direct implementation of the changes you requested.
+
+```mermaid
+flowchart TD
+    A["Plan with good model"] --> B["Write plan to markdown"]
+    B --> C["Edit plan manually"]
+    C --> D["New session with plan + code"]
+    D --> E["Model reviews plan"]
+    E --> F{"Correct?"}
+    F -->|No| C
+    F -->|Yes| G["Switch to cheaper model"]
+    G --> H["Implement changes"]
+```
 
 ## What should I get the model todo?
 
 I mean this is an open question...
 
-Should your model do your commit messages / PR descriptions, maybe, however you should probably know what it's doing.
+Should your model write your commit messages and PR descriptions? Maybe — but you should probably know what it's doing.
 
 Should the models do the code-review, not on github, but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
 
-However I suspect that you can judge for yourself if having a model do something that you can already trivially is a great use of the model. Or did you just turn your github commit message into a 48$ Anthropic Mythos call for funsies cause you couldn't be arsed.
+However I suspect you can judge for yourself whether having a model do something you can already do trivially is a great use of it. Or did you just turn your GitHub commit message into a $48 Anthropic Mythos call for fun because you couldn't be bothered?
 
