@@ -13,8 +13,8 @@ Converts text in → integers. Integers → text back out. The full set of token
 
 [Show the HF tokenizer playground live — paste a few sentences, watch it split into tokens]
 
-https://huggingface.co/spaces/bartar/tokenizers
-https://gpt-tokenizer.dev/
+* https://huggingface.co/spaces/bartar/tokenizers
+* https://gpt-tokenizer.dev/
 
 # Brief overview — LLMs in ~200 lines
 
@@ -22,7 +22,7 @@ Andrej Karpathy's microGPT implements the core of an LLM in ~200 lines of Python
 
 [Worth scrolling through — you can read the whole thing in 10 minutes]
 
-https://karpathy.ai/microgpt.html
+* https://karpathy.ai/microgpt.html
 
 # What goes into making a model?
 
