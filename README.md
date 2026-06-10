@@ -47,12 +47,12 @@ Billions of floating-point numbers, all starting as random noise. Training slowl
 
 The "Attention Is All You Need" paper (Vaswani et al., 2017) introduced the mechanism that makes modern LLMs work. Multiple attention heads let the model weigh which parts of the input matter most for each prediction.
 
-https://en.wikipedia.org/wiki/Attention_Is_All_You_Need
+* https://en.wikipedia.org/wiki/Attention_Is_All_You_Need
 
 [Attention is a deep topic — the links above are good starting points]
 
-https://karpathy.github.io/2026/02/12/microgpt/
-https://github.com/mcgillij/llm_exploration/blob/main/AttentionBenchmarks.ipynb
+* https://karpathy.github.io/2026/02/12/microgpt/
+* https://github.com/mcgillij/llm_exploration/blob/main/AttentionBenchmarks.ipynb
 
 
 ## Training loop
@@ -73,23 +73,24 @@ The artifact of this step is a "base" model.
 
 It takes input in the form of continuations:
 
-Input 1:
+#### Input 1:
 ```
 The quick brown
 ```
-Model:
+#### Base Model:
 ```
 The quick brown fox
 ```
 
-Input 2:
+#### Input 2:
 ```
 The quick brown fox jumps
 ```
-Model:
+#### Base Model:
 ```
 The quick brown fox jumps over
 ```
+
 A base model is just autocomplete. Useful as a demo, but we need fine-tuning to make it actually useful.
 
 # What is a base model?
@@ -97,6 +98,14 @@ A base model is just autocomplete. Useful as a demo, but we need fine-tuning to 
 A base model is a next-token predictor. Full stop. It only knows how to continue a pattern — like your phone's autocomplete, but trained on the entire internet.
 
 Training one is the most expensive step: tons of GPUs, tons of data, tons of time. The output is a model that doesn't really "do" anything except compute the most likely next token.
+
+## Inference
+
+Once trained, using the model is just the forward pass — input tokens in, prediction out. No gradients, no backprop. This is called *inference* and it's what happens every time you prompt a model.
+
+The same architecture runs for both — training just adds the backward pass.
+
+[Inference is cheap. Training is not.]
 
 # Post-Training / What does fine-tuning do?
 
@@ -107,7 +116,10 @@ Fine-tuning turns a raw base model into something useful — an assistant, an ag
 This step costs way less and can be done on top of an already-trained base model.
 
 This is where techniques like RLHF (Reinforcement Learning from Human Feedback) come in.
-Initial DeepSeek paper: https://arxiv.org/abs/2501.12948
+
+Initial DeepSeek paper:
+
+* https://arxiv.org/abs/2501.12948
 
 Fine-tuning adds layers to the base model by running thousands of hand-curated or synthetic examples that teach it how to use tools.
 
@@ -172,7 +184,9 @@ Example Tool definition:
 ]
 ```
 
-## Tool calling in practice
+## Tool calling
+
+Tool calling is the basis of anything "agentic" with LLMs. Without it, the model is just a chat auto-complete drawing from its own knowledge.
 
 ### Tool
 
@@ -183,15 +197,21 @@ Example Tool definition:
 * https://github.com/mcgillij/dorf/blob/main/client/bot/lms.py#L220
 
 
-# Tool calling
-
-Tool calling is the basis of anything "agentic" with LLMs. Without it, the model is just a chat auto-complete drawing from its own knowledge.
-
-# Your prompt
+## Your prompt
 
 The questions and tasks you're assigning to the model
 
-# RAG / Retrieval Augmented Generation
+## Temperature
+
+LLMs sample from a probability distribution — they don't always pick the single most likely token. Temperature controls how conservative or creative that sampling is:
+
+* **Low (0-0.3):** picks likely tokens — use for code, math, facts
+* **Medium (0.4-0.7):** balanced — most chat and creative writing
+* **High (0.8-2.0):** more random, more creative, more nonsense
+
+[Start low. Go higher only when you want variety.]
+
+## RAG / Retrieval Augmented Generation
 
 Injecting relevant context into the prompt before (or after) the model generates its response — via pre-processing or post-processing hooks.
 
@@ -205,6 +225,11 @@ flowchart LR
 
 It surfaces relevant info, but don't mistake retrieval for truth — the model can still ignore or misread what you inject.
 
+## Hallucination
+
+LLMs are next-token predictors, not databases. They will confidently state false things — especially on topics with sparse training data or when pushed beyond their knowledge cutoff.
+
+[Verify any factual claim: versions, dates, API names. Assume it's wrong until proven otherwise.]
 
 # Context Windows (input / output)
 
@@ -233,7 +258,7 @@ Papers on context utilization:
 * https://arxiv.org/abs/2508.07479
 * https://arxiv.org/abs/2510.05381
 
-# Compaction
+## Compaction
 
 Most harnesses will compact at roughly 70% of the context-window due to this known limitation. Compaction is generally just a call to a cheaper model to summarize the history and start a new session with the summary, system prompt, tools, skills, MCPs — everything that was in the original context.
 
@@ -293,8 +318,21 @@ LLMs are super neat, super unpredictable. But using them effectively isn't a sci
 
 Not even taking into account the cost. Just in terms of getting things done, managing the context is the quickest way to not have to iterate many times.
 
+## Cost model
 
-## How I generally work
+LLM pricing is per-token, and it adds up fast:
+
+* Input tokens (your prompt, tools, skills, MCPs) — cheaper
+* Output tokens (the model's response) — 3-10x more expensive
+* Every tool call doubles the cost: the result goes back in as new input tokens
+
+[Cheap for one-off prompts. Painful in loops or at scale.]
+
+# How I generally work
+
+There is no silver bullet or perfect workflow, as everyone is trying to achieve something different.
+
+However jamming the context full of trash is only benefiting the model companies and likely wasting your own time as well.
 
 Plan with a decent model, ask it about the code that you want to modify, and have it suggest changes, make it write out the concrete implementation details to a markdown file.
 
@@ -320,9 +358,9 @@ flowchart TD
 
 I mean this is an open question...
 
-Should your model write your commit messages and PR descriptions? Maybe — but at some point you may actually have to understand what your doing...
+Should your model write your commit messages and PR descriptions? Maybe — but at some point you may actually have to understand what you're doing...
 
-Should the models do the code-review, maybe?, but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
+Should the models do the code review? Maybe — but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
 
 However I suspect you can judge for yourself whether having a model do something you can already do trivially is a great use of it. Or did you just turn your GitHub commit message into a $48 Anthropic Mythos call for fun because you couldn't be bothered?
 
