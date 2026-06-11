@@ -359,6 +359,8 @@ Edit the plan to reflect the changes you want. This step is key — the model do
 
 Then once the model has the correct context in place, you can swap to build mode with a lesser model for the direct implementation of the changes you requested.
 
+![context window](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/plan.png)
+
 ```mermaid
 flowchart TD
     A["Plan with good model"] --> B["Write plan to markdown"]
