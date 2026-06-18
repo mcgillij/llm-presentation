@@ -397,6 +397,11 @@ LLM pricing is per-token, and it adds up fast:
 
 [Cheap for one-off prompts. Painful in loops or at scale.]
 
+
+![OpenAI Prices](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/openai_prices.png)
+![Anthropic Prices](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/anthropic_prices.png)
+![DeepSeek Prices](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/deepseek_prices.png)
+
 # How I generally work
 
 There is no silver bullet or perfect workflow, as everyone is trying to achieve something different.
