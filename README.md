@@ -123,7 +123,7 @@ Initial DeepSeek paper:
 
 Fine-tuning adds layers to the base model by running thousands of hand-curated or synthetic examples that teach it how to use tools.
 
-## System Prompt
+## System Prompts
 
 The bare-bones instructions the model creators baked in. Generally you can't modify these unless you're running your own local models.
 
@@ -145,6 +145,9 @@ For each function call, return a json object with function name and arguments wi
 {"name": <function-name>, "arguments": <args-json-object>}
 </tool_call><|im_end|>
 ```
+All the leaked system prompts for the interested:
+
+[system prompt leaks](https://github.com/asgeirtj/system_prompts_leaks/blob/main/Anthropic/Claude%20Code/claude-code-2.1.172-fable-5.md)
 
 Example Tool call:
 
@@ -283,6 +286,9 @@ MCP is just a protocol for defining tool calls — nothing magic. It can be loca
 Skills are markdown frontmatter that describe how to use a particular tool or endpoint. Depending on your harness's implementation, they can also pollute the context of every request.
 
 With something like Claude Code, you can turn skills into slash commands — e.g., /do_my_git_commits — which is much better than bloating every request.
+Additionally you can actually turn off skills to stop the context rot, as even claudes own system prompt is bloated at this point.
+
+![Turn off Skills](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/skills.png)
 
 ## AGENTS.md (CLAUDE.md, etc.)
 
@@ -328,6 +334,52 @@ Frameworks:
 
 * **OpenClaw** — wouldn't recommend, super exploitable
   The smaller forks (nanoclaw, microclaw) are more interesting for local hardware.
+
+# Loops (for agents)
+
+## Ralph
+
+Feed the same prompt into an agent over and over.
+
+``` bash
+while 1; do
+  claude -p < plan.md
+done
+```
+
+## Goals / Workflows
+
+Like the Ralph loop these are still very basic, but have an extra call to an LLM for an **Until** or **End** condition.
+
+These take a prompt and keep updating it until the end condition is met. Generally kicked off from the harness.
+
+## Event-driven loops
+
+The new hotness from openclaw and hermes agents — and to some extent Claude and Codex are starting to do these.
+
+Scheduled loops that hook into integrations, watch PRs and kanban boards, and kick off goal/workflow loops based on events.
+
+Example: Monitor a particular PR, respond to each GH comment from **CodeRabbit**, **Greptile**, **GHAS** until it passes.
+
+# Human in the loop
+
+A human reviews and approves (or rejects) each action before it executes. The model suggests, you decide.
+
+Useful for high-stakes operations — deployments, financial transactions, content publishing. Slower but safer.
+
+[Essential for anything that touches production or external data.]
+
+# Agent in the loop
+
+One agent's output is reviewed by another agent before execution. Common patterns:
+
+* Codex reviews Claude's code output before you apply it
+* A cheaper model validates the primary model's reasoning
+* Separate agents handle different concerns (write vs review)
+
+Same idea as human in the loop, but faster and cheaper. Less reliable than a human reviewer, but catches obvious mistakes.
+
+[Good middle ground: human for final sign-off, agent for pre-checks.]
 
 # Some final notes
 
@@ -389,7 +441,6 @@ Just because you can, doesn't mean you should!
 
 Don't ever start new sessions. Use expensive models to do trivial things. Have agents running in loops with gigantic context for no reason. Don't provide the context to the agent — make it search for everything.
 
-
 # Bonus extra content
 
 ## Local LLMs
@@ -439,3 +490,15 @@ Quantization reduces the precision of the model's weights — trading a small am
 Real-world example: A 70B model in FP16 needs ~140 GB VRAM. In INT4 it needs ~35 GB. That's the difference between "needs a cluster" and "fits on a single A100."
 
 [When in doubt, start with INT8 or Q4_K_M. Go higher if you notice quality regressions on your specific task.]
+
+## Bonus Bonus
+
+Neat things that come with certain harnesses.
+
+OpenCode has multiple ways to interact with it, plus free access to open-source models (generally don't use these for work, but great for learning and personal projects).
+
+* TUI
+* Desktop app
+* CLI — `opencode run 'how do I list all the files in the current directory'`
+* Web UI — super handy for remote
+
