@@ -471,6 +471,16 @@ Real-world example: A 70B model in FP16 needs ~140 GB VRAM. In INT4 it needs ~35
 
 # How I generally work
 
+## Adversarial
+
+Ask the AI to point out all the issues with the implementation and have you justify them. This works surprisingly well.
+
+## Learning
+
+Using it to learn vs doing the work. It's not going to lose it's job if you forget how to do yours.
+
+## Planning?
+
 There is no silver bullet or perfect workflow, as everyone is trying to achieve something different.
 
 However jamming the context full of trash is only benefiting the model companies and likely wasting your own time as well.
