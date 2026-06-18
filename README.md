@@ -37,7 +37,17 @@ Start with a massive corpus of text — scrape it, clean it, tokenize it into in
 
 The model is a giant math expression. Autograd builds a computation graph as data flows through the neural network (model parameters + input tokens). Then backpropagation walks backward through that graph to figure out how much each parameter contributed to the final error.
 
+https://trekhleb.dev/micrograd-ts/#training
+
 [This is the magic trick — without autograd, you'd have to derive every gradient by hand]
+
+* MLP (Multi-Layer Perceptron)
+
+![MLP](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/nn.jpg)
+
+* Gradient Descent
+
+![Gradient Descent](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/gradient.png)
 
 ## Parameters
 
@@ -107,7 +117,7 @@ The same architecture runs for both — training just adds the backward pass.
 
 [Inference is cheap. Training is not.]
 
-# Post-Training / What does fine-tuning do?
+# Fine-tuning
 
 Fine-tuning turns a raw base model into something useful — an assistant, an agent, a tool-user.
 
@@ -145,9 +155,16 @@ For each function call, return a json object with function name and arguments wi
 {"name": <function-name>, "arguments": <args-json-object>}
 </tool_call><|im_end|>
 ```
+
 All the leaked system prompts for the interested:
 
 [system prompt leaks](https://github.com/asgeirtj/system_prompts_leaks/blob/main/Anthropic/Claude%20Code/claude-code-2.1.172-fable-5.md)
+
+# Tool calling
+
+Tool calling is the basis of anything "agentic" with LLMs. Without it, the model is just a chat auto-complete drawing from its own knowledge.
+
+Added during fine-tuning, with guidelines baked into the system prompt.
 
 Example Tool call:
 
@@ -187,18 +204,11 @@ Example Tool definition:
 ]
 ```
 
-## Tool calling
-
-Tool calling is the basis of anything "agentic" with LLMs. Without it, the model is just a chat auto-complete drawing from its own knowledge.
-
-### Tool
-
+**Tool implementation:**
 * https://github.com/mcgillij/dorf/blob/main/client/bot/tools/searxng_search.py
 
-### How to process tool call / requests
-
+**Processing tool responses:**
 * https://github.com/mcgillij/dorf/blob/main/client/bot/lms.py#L220
-
 
 ## Your prompt
 
@@ -214,7 +224,7 @@ LLMs sample from a probability distribution — they don't always pick the singl
 
 [Start low. Go higher only when you want variety.]
 
-## RAG / Retrieval Augmented Generation
+# RAG / Retrieval Augmented Generation
 
 Injecting relevant context into the prompt before (or after) the model generates its response — via pre-processing or post-processing hooks.
 
@@ -228,11 +238,108 @@ flowchart LR
 
 It surfaces relevant info, but don't mistake retrieval for truth — the model can still ignore or misread what you inject.
 
-## Hallucination
+# Hallucination
 
 LLMs are next-token predictors, not databases. They will confidently state false things — especially on topics with sparse training data or when pushed beyond their knowledge cutoff.
 
 [Verify any factual claim: versions, dates, API names. Assume it's wrong until proven otherwise.]
+
+# What's a harness?
+
+Claude Code / Codex / OpenCode / Copilot-cli / OpenHarness / Pi
+
+* https://opencode.ai/
+* https://pi.dev/
+* https://github.com/HKUDS/OpenHarness
+
+These are wrappers that give the model a better interface for tool calling.
+
+Claude Code is notably gamified — engineered to make you *feel* productive rather than actually use the context efficiently. It maximizes token burn while you feel like you're getting things done. Useful, but know what you're paying for.
+
+Codex is openai's harness
+
+OpenCode has multiple ways to interact with it, plus free access to open-source models (generally don't use these for work, but great for learning and personal projects).
+
+* TUI
+* Desktop app
+* CLI — `opencode run 'how do I list all the files in the current directory'`
+* Web UI — super handy for remote
+
+There are countless other alternatives here.
+
+
+## What are agents (the markdown kind)
+
+Markdown files that define an agent persona for a specific role or task — "You are a senior Rust developer," "You are a database admin," etc. Some harnesses inject these into context on every request.
+
+A generic agent usually wins over configured markdown agents, but they can be useful for specialized tasks. Just be aware they're mostly context pollution.
+
+[Conditional loading (only inject when relevant) helps, but few harnesses do this well.]
+
+## What are agents? (Not the markdown kind.)
+
+An agent is a model running in a loop with tool access, memory, and autonomy. The basic pattern (ReAct: Reasoning + Acting):
+
+1. Model receives a task
+2. Model decides: respond directly or call a tool
+3. If tool: execute, add result to context, loop back to 2
+4. If respond: done
+
+LLM with access to cron (and too many permissions) doing autonomous tasks.
+
+Frameworks:
+
+* **Hermes Agent** — https://github.com/NousResearch/hermes-agent
+  Lightweight agent framework from Nous Research. Uses function calling, supports local models.
+
+* **OpenClaw** — wouldn't recommend, super exploitable
+  The smaller forks (nanoclaw, microclaw) are more interesting for local hardware.
+
+# Loops (for agents)
+
+## Basic loop (Ralph)
+
+Feed the same prompt into an agent over and over.
+
+``` bash
+while 1; do
+  claude -p < plan.md
+done
+```
+
+## Goals / Workflows
+
+Like the Ralph loop these are still very basic, but have an extra call to an LLM for an **Until** or **End** condition.
+
+These take a prompt and keep updating it until the end condition is met. Generally kicked off from the harness.
+
+## Event-driven loops
+
+The new hotness from openclaw and hermes agents — and to some extent Claude and Codex are starting to do these.
+
+Scheduled loops that hook into integrations, watch PRs and kanban boards, and kick off goal/workflow loops based on events.
+
+Example: Monitor a particular PR, respond to each GH comment from **CodeRabbit**, **Greptile**, **GHAS** until it passes.
+
+# Human in the loop
+
+A human reviews and approves (or rejects) each action before it executes. The model suggests, you decide.
+
+Useful for high-stakes operations — deployments, financial transactions, content publishing. Slower but safer.
+
+[Essential for anything that touches production or external data.]
+
+# Agent in the loop
+
+One agent's output is reviewed by another agent before execution. Common patterns:
+
+* Codex reviews Claude's code output before you apply it
+* A cheaper model validates the primary model's reasoning
+* Separate agents handle different concerns (write vs review)
+
+Same idea as human in the loop, but faster and cheaper. Less reliable than a human reviewer, but catches obvious mistakes.
+
+[Good middle ground: human for final sign-off, agent for pre-checks.]
 
 # Context Windows (input / output)
 
@@ -286,7 +393,7 @@ MCP is just a protocol for defining tool calls — nothing magic. It can be loca
 Skills are markdown frontmatter that describe how to use a particular tool or endpoint. Depending on your harness's implementation, they can also pollute the context of every request.
 
 With something like Claude Code, you can turn skills into slash commands — e.g., /do_my_git_commits — which is much better than bloating every request.
-Additionally you can actually turn off skills to stop the context rot, as even claudes own system prompt is bloated at this point.
+Additionally you can actually turn off skills to stop the context rot, as even Claude's own system prompt is bloated at this point.
 
 ![Turn off Skills](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/skills.png)
 
@@ -296,96 +403,8 @@ A very brief outline of the project. Some studies around context-rot suggest mod
 
 * https://arxiv.org/abs/2602.11988
 
-# What's a harness?
 
-Claude Code / Codex / OpenCode / Copilot-cli / OpenHarness / Pi
-
-* https://opencode.ai/
-* https://pi.dev/
-* https://github.com/HKUDS/OpenHarness
-
-These are wrappers that give the model a better interface for tool calling.
-
-Claude Code is notably gamified — engineered to make you *feel* productive rather than actually use the context efficiently. It maximizes token burn while you feel like you're getting things done. Useful, but know what you're paying for.
-
-## What are agents (the markdown kind)
-
-Markdown files that define an agent persona for a specific role or task — "You are a senior Rust developer," "You are a database admin," etc. Some harnesses inject these into context on every request.
-
-A generic agent usually wins over configured markdown agents, but they can be useful for specialized tasks. Just be aware they're mostly context pollution.
-
-[Conditional loading (only inject when relevant) helps, but few harnesses do this well.]
-
-## What are agents? (Not the markdown kind.)
-
-An agent is a model running in a loop with tool access, memory, and autonomy. The basic pattern (ReAct: Reasoning + Acting):
-
-1. Model receives a task
-2. Model decides: respond directly or call a tool
-3. If tool: execute, add result to context, loop back to 2
-4. If respond: done
-
-LLM with access to cron (and too many permissions) doing autonomous tasks.
-
-Frameworks:
-
-* **Hermes Agent** — https://github.com/NousResearch/hermes-agent
-  Lightweight agent framework from Nous Research. Uses function calling, supports local models.
-
-* **OpenClaw** — wouldn't recommend, super exploitable
-  The smaller forks (nanoclaw, microclaw) are more interesting for local hardware.
-
-# Loops (for agents)
-
-## Ralph
-
-Feed the same prompt into an agent over and over.
-
-``` bash
-while 1; do
-  claude -p < plan.md
-done
-```
-
-## Goals / Workflows
-
-Like the Ralph loop these are still very basic, but have an extra call to an LLM for an **Until** or **End** condition.
-
-These take a prompt and keep updating it until the end condition is met. Generally kicked off from the harness.
-
-## Event-driven loops
-
-The new hotness from openclaw and hermes agents — and to some extent Claude and Codex are starting to do these.
-
-Scheduled loops that hook into integrations, watch PRs and kanban boards, and kick off goal/workflow loops based on events.
-
-Example: Monitor a particular PR, respond to each GH comment from **CodeRabbit**, **Greptile**, **GHAS** until it passes.
-
-# Human in the loop
-
-A human reviews and approves (or rejects) each action before it executes. The model suggests, you decide.
-
-Useful for high-stakes operations — deployments, financial transactions, content publishing. Slower but safer.
-
-[Essential for anything that touches production or external data.]
-
-# Agent in the loop
-
-One agent's output is reviewed by another agent before execution. Common patterns:
-
-* Codex reviews Claude's code output before you apply it
-* A cheaper model validates the primary model's reasoning
-* Separate agents handle different concerns (write vs review)
-
-Same idea as human in the loop, but faster and cheaper. Less reliable than a human reviewer, but catches obvious mistakes.
-
-[Good middle ground: human for final sign-off, agent for pre-checks.]
-
-# Some final notes
-
-LLMs are super neat, super unpredictable. But using them effectively isn't a science yet. However what is 100% true is that managing the context is the current best way to allow the models to solve issues for you effectively.
-
-Not even taking into account the cost. Just in terms of getting things done, managing the context is the quickest way to not have to iterate many times.
+# Practical considerations
 
 ## Cost model
 
@@ -401,52 +420,6 @@ LLM pricing is per-token, and it adds up fast:
 ![OpenAI Prices](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/openai_prices.png)
 ![Anthropic Prices](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/anthropic_prices.png)
 ![DeepSeek Prices](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/deepseek_prices.png)
-
-# How I generally work
-
-There is no silver bullet or perfect workflow, as everyone is trying to achieve something different.
-
-However jamming the context full of trash is only benefiting the model companies and likely wasting your own time as well.
-
-Plan with a decent model, ask it about the code that you want to modify, and have it suggest changes, make it write out the concrete implementation details to a markdown file.
-
-Edit the plan to reflect the changes you want. This step is key — the model doesn't know your intent because you're human, and you're probably bad at describing it.
-
-/new session with @my_revised_plan.md and @path/to/files/you/want/to/modify ask a competent model to review the plan for correctness against the current codebase.
-
-Then once the model has the correct context in place, you can swap to build mode with a lesser model for the direct implementation of the changes you requested.
-
-![context window](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/plan.png)
-
-```mermaid
-flowchart TD
-    A["Plan with good model"] --> B["Write plan to markdown"]
-    B --> C["Edit plan manually"]
-    C --> D["New session with plan + code"]
-    D --> E["Model reviews plan"]
-    E --> F{"Correct?"}
-    F -->|No| C
-    F -->|Yes| G["Switch to cheaper model"]
-    G --> H["Implement changes"]
-```
-
-## What should I get the model todo?
-
-I mean this is an open question...
-
-Should your model write your commit messages and PR descriptions? Maybe — but at some point you may actually have to understand what you're doing...
-
-Should the models do the code review? Maybe — but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
-
-However I suspect you can judge for yourself whether having a model do something you can already do trivially is a great use of it. Or did you just turn your GitHub commit message into a $48 Anthropic Mythos call for fun because you couldn't be bothered?
-
-Just because you can, doesn't mean you should!
-
-# How to spend as much as possible (for David)
-
-Don't ever start new sessions. Use expensive models to do trivial things. Have agents running in loops with gigantic context for no reason. Don't provide the context to the agent — make it search for everything.
-
-# Bonus extra content
 
 ## Local LLMs
 
@@ -496,14 +469,54 @@ Real-world example: A 70B model in FP16 needs ~140 GB VRAM. In INT4 it needs ~35
 
 [When in doubt, start with INT8 or Q4_K_M. Go higher if you notice quality regressions on your specific task.]
 
-## Bonus Bonus
+# How I generally work
 
-Neat things that come with certain harnesses.
+There is no silver bullet or perfect workflow, as everyone is trying to achieve something different.
 
-OpenCode has multiple ways to interact with it, plus free access to open-source models (generally don't use these for work, but great for learning and personal projects).
+However jamming the context full of trash is only benefiting the model companies and likely wasting your own time as well.
 
-* TUI
-* Desktop app
-* CLI — `opencode run 'how do I list all the files in the current directory'`
-* Web UI — super handy for remote
+Plan with a decent model, ask it about the code that you want to modify, and have it suggest changes, make it write out the concrete implementation details to a markdown file.
+
+Edit the plan to reflect the changes you want. This step is key — the model doesn't know your intent because you're human, and you're probably bad at describing it.
+
+/new session with @my_revised_plan.md and @path/to/files/you/want/to/modify ask a competent model to review the plan for correctness against the current codebase.
+
+Then once the model has the correct context in place, you can swap to build mode with a lesser model for the direct implementation of the changes you requested.
+
+![context window](https://raw.githubusercontent.com/mcgillij/llm-presentation/main/plan.png)
+
+```mermaid
+flowchart TD
+    A["Plan with good model"] --> B["Write plan to markdown"]
+    B --> C["Edit plan manually"]
+    C --> D["New session with plan + code"]
+    D --> E["Model reviews plan"]
+    E --> F{"Correct?"}
+    F -->|No| C
+    F -->|Yes| G["Switch to cheaper model"]
+    G --> H["Implement changes"]
+```
+
+## What should I get the model todo?
+
+I mean this is an open question...
+
+Should your model write your commit messages and PR descriptions? Maybe — but at some point you may actually have to understand what you're doing...
+
+Should the models do the code review? Maybe — but locally you can use it to double check your changes, or have something like codex review claudes output. There's no 100% silver bullet.
+
+However I suspect you can judge for yourself whether having a model do something you can already do trivially is a great use of it. Or did you just turn your GitHub commit message into a $48 Anthropic Mythos call for fun because you couldn't be bothered?
+
+Just because you can, doesn't mean you should!
+
+# How to spend as much as possible (for David)
+
+Don't ever start new sessions. Use expensive models to do trivial things. Have agents running in loops with gigantic context for no reason. Don't provide the context to the agent — make it search for everything.
+
+# Some final notes
+
+LLMs are super neat, super unpredictable. But using them effectively isn't a science yet. However what is 100% true is that managing the context is the current best way to allow the models to solve issues for you effectively.
+
+Not even taking into account the cost. Just in terms of getting things done, managing the context is the quickest way to not have to iterate many times.
+
 
